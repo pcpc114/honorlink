@@ -1,0 +1,104 @@
+name: 배포
+
+# main 브랜치에 파일이 올라가면 자동으로 홈페이지에 반영됩니다.
+# 수동으로 다시 배포하고 싶으면 Actions 탭에서 "Run workflow" 를 누르세요.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치면 나중 것만 살립니다 (중간에 취소하지 않음)
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ── 1단계: 올리기 전에 실수 걸러내기 ──────────────────────────────
+  검사:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 배포 전 자체 점검
+        run: |
+          node -e '
+          const fs = require("fs");
+          let fail = 0;
+          const ok = (c, m) => { console.log((c ? "  OK   " : "  실패 ") + m); if (!c) fail++; };
+
+          // 1) 반드시 있어야 하는 파일
+          ["index.html","contact/index.html","favicon.svg","robots.txt","sitemap.xml","CNAME",".nojekyll"]
+            .forEach(f => ok(fs.existsSync(f), "파일 존재: " + f));
+
+          // 2) 배포되면 안 되는 파일이 섞였는지 (테스트 스크립트 등)
+          const walk = d => fs.readdirSync(d, {withFileTypes:true}).flatMap(e => {
+            if (e.name === ".git" || e.name === ".github" || e.name === "node_modules") return [];
+            return e.isDirectory() ? walk(d + "/" + e.name) : [d + "/" + e.name];
+          });
+          const files = walk(".").map(f => f.replace(/^\.\//, ""));
+          const bad = files.filter(f => /\.(js|mjs|cjs|log|zip|bak)$/i.test(f));
+          ok(bad.length === 0, "배포 부적합 파일 없음" + (bad.length ? " -> " + bad.join(", ") : ""));
+
+          // 3) 자리표시자 도메인이 남아 있는지
+          const html = fs.readFileSync("index.html","utf8") + fs.readFileSync("contact/index.html","utf8");
+          ok(!/example\.com/.test(html), "example.com 자리표시자 없음");
+
+          // 4) CNAME 과 페이지 안의 도메인이 일치하는지
+          const cname = fs.readFileSync("CNAME","utf8").trim();
+          ok(/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(cname), "CNAME 형식 정상: " + cname);
+          ok(html.includes("https://" + cname), "페이지의 도메인이 CNAME 과 일치");
+
+          // 5) 구조화 데이터(JSON-LD)가 깨지지 않았는지
+          ["index.html","contact/index.html"].forEach(f => {
+            const s = fs.readFileSync(f,"utf8");
+            const m = s.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+            try {
+              const g = JSON.parse(m[1]);
+              const ids = new Set(g["@graph"].map(n => n["@id"]).filter(Boolean));
+              const refs = [];
+              JSON.stringify(g).replace(/"@id":"([^"]+)"/g, (_, v) => { refs.push(v); return _; });
+              ok(refs.every(r => ids.has(r)), f + " JSON-LD 유효 + 참조 무결");
+            } catch (e) { ok(false, f + " JSON-LD 오류: " + e.message); }
+          });
+
+          // 6) 사이트맵에 적힌 페이지가 실제로 있는지
+          const sm = fs.readFileSync("sitemap.xml","utf8").replace(/<!--[\s\S]*?-->/g,"");
+          const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
+          locs.forEach(u => {
+            const p = u.replace("https://" + cname, "").replace(/^\//,"") || "index.html";
+            const target = p.endsWith("/") ? p + "index.html" : p;
+            ok(fs.existsSync(target), "사이트맵 URL 실재: " + u);
+          });
+
+          // 7) 내부 링크가 실제 파일을 가리키는지
+          const links = [...html.matchAll(/href="(\/[^"#?]*)"/g)].map(m => m[1]);
+          [...new Set(links)].forEach(l => {
+            const t = l.endsWith("/") ? l.slice(1) + "index.html" : l.slice(1);
+            ok(fs.existsSync(t), "내부 링크 대상 존재: " + l);
+          });
+
+          console.log("");
+          if (fail) { console.log("점검 실패 " + fail + "건 — 배포를 중단합니다."); process.exit(1); }
+          console.log("점검 통과 — 배포를 진행합니다.");
+          '
+
+  # ── 2단계: 실제 배포 ──────────────────────────────────────────────
+  배포:
+    needs: 검사
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - id: deployment
+        uses: actions/deploy-pages@v4

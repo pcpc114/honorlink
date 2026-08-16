@@ -1,0 +1,23 @@
+# 아너링크 (태산솔루션) — robots.txt
+# 도메인: honorlink.li (치환 완료)
+#
+# 주의: robots.txt 는 크롤러당 "가장 구체적인 그룹 하나"만 적용된다.
+#       Googlebot 전용 그룹을 따로 만들면 Googlebot 은 User-agent: * 그룹을
+#       통째로 무시하므로, 나중에 * 에 Disallow 를 추가해도 구글에는 안 먹는다.
+#       그래서 전용 그룹을 두지 않고 * 하나로만 관리한다.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://honorlink.li/sitemap.xml
+
+# 참고 — Google-Extended 에 대해
+#   Google-Extended 는 Gemini 앱 / Vertex AI 의 학습·그라운딩만 제어한다.
+#   구글 검색의 AI 오버뷰와는 무관하며, AI 오버뷰 노출은 Googlebot 크롤 허용과
+#   스니펫 설정(max-snippet / nosnippet / noindex)으로만 결정된다.
+#   Allow 가 기본값이므로 별도 그룹을 만들 필요가 없어 두지 않았다.
+#   (학습을 거부하려면 아래 두 줄을 추가할 것. 단 그 순간 Google-Extended 는
+#    위 * 그룹을 무시하게 되므로 * 의 규칙을 이 그룹에도 복사해야 한다)
+#
+#   User-agent: Google-Extended
+#   Disallow: /
