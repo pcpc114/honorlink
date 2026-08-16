@@ -19,7 +19,8 @@ concurrency:
 
 jobs:
   # ── 1단계: 올리기 전에 실수 걸러내기 ──────────────────────────────
-  검사:
+  check:
+    name: 배포 전 점검
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -88,8 +89,9 @@ jobs:
           '
 
   # ── 2단계: 실제 배포 ──────────────────────────────────────────────
-  배포:
-    needs: 검사
+  deploy:
+    name: 배포
+    needs: check
     runs-on: ubuntu-latest
     environment:
       name: github-pages
