@@ -318,13 +318,29 @@
         .inline-cta strong { display: block; font-size: 1rem; color: #0b4c8c; }
         .inline-cta span { color: #44586b; }
 
+        /* ── 모바일: 화면 하단 고정 바 (누르면 텔레그램 바로 열림) ── */
         .sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: none;
-                      padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96);
+                      padding: 10px 14px calc(8px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96);
                       border-top: 1px solid #dde3e9; backdrop-filter: saturate(180%) blur(8px); }
-        .sticky-cta a { display: block; text-align: center; background: #187AA8; color: #fff; text-decoration: none;
+        .sticky-cta .tg-main { display: flex; align-items: center; justify-content: center; gap: 8px;
+                        background: #187AA8; color: #fff; text-decoration: none;
                         font-weight: 800; padding: 13px; border-radius: 10px; font-size: 0.98rem; }
-        .sticky-cta a:hover { background: #14688f; }
-        @media (max-width: 760px) { .sticky-cta { display: block; } body { padding-bottom: 72px; } }
+        .sticky-cta .tg-main:hover { background: #14688f; }
+        .sticky-cta .tg-sub-link { display: block; text-align: center; font-size: 0.76rem; color: #5f5f5f;
+                        margin-top: 6px; text-decoration: none; }
+        .sticky-cta .tg-sub-link:hover { text-decoration: underline; }
+
+        /* ── 데스크톱: 오른쪽 아래 떠 있는 버튼 ── */
+        .tg-float { position: fixed; right: 22px; bottom: 22px; z-index: 30; display: flex; align-items: center; gap: 9px;
+                    background: #187AA8; color: #fff; text-decoration: none; font-weight: 800; font-size: 0.95rem;
+                    padding: 14px 20px; border-radius: 999px; box-shadow: 0 6px 20px rgba(11,76,140,.35); }
+        .tg-float:hover { background: #14688f; box-shadow: 0 8px 26px rgba(11,76,140,.45); }
+        .tg-float svg { flex: none; }
+
+        /* 모바일: 하단 고정 바가 문의를 담당하므로 상단 버튼은 숨겨 헤더를 한 줄로 유지 */
+        @media (max-width: 760px) { .sticky-cta { display: block; } .tg-float { display: none; }
+                                    .nav-cta { display: none; } body { padding-bottom: 108px; } }
+        @media (min-width: 761px) { .sticky-cta { display: none; } }
         .skip-link { position: absolute; left: -9999px; }
         .skip-link:focus { position: static; display: inline-block; margin: 8px; padding: 8px 14px; background: #0b4c8c; color: #fff; border-radius: 6px; }
 
@@ -355,7 +371,7 @@
            막대는 테두리로, 흰 글자 영역은 검은 글자로 바꿔 종이에서도 읽히게 한다. */
         @media print {
             body { color: #000; }
-            .sticky-cta, .skip-link, .tabs, .btn-row, nav.related-terms { display: none !important; }
+            .sticky-cta, .tg-float, .skip-link, .tabs, .btn-row, nav.related-terms { display: none !important; }
             header { position: static !important; border: 0; }
             #what-is, #tco, #architecture, #eeat, #calculator-section, #faq, .cta-box,
             footer { content-visibility: visible !important; }
@@ -382,7 +398,7 @@
             <a href="/" class="no-prefetch" style="font-weight: bold; text-decoration: none; color: #0b5fb0;">🏠 아너링크</a>
             <a href="#calculator-section" style="text-decoration:none;color:#444;">비용 계산기</a>
             <a href="#faq" style="text-decoration:none;color:#444;">FAQ</a>
-            <a href="/contact/" class="nav-cta">도입 문의</a>
+            <a href="https://t.me/Guan_Yus" target="_blank" rel="noopener" class="nav-cta">💬 텔레그램 문의</a>
         </nav>
     </header>
 
@@ -856,10 +872,25 @@
         </section>
     </main>
 
-    <!-- 모바일 하단 고정 CTA: 페이지가 11,000px 이 넘어 중간에서도 문의 경로가 필요함 -->
+    <!-- 상시 노출 문의 버튼.
+         누르면 문의 페이지를 거치지 않고 텔레그램 대화가 바로 열린다.
+         모바일은 하단 고정 바, 데스크톱은 오른쪽 아래 떠 있는 버튼. -->
     <div class="sticky-cta">
-        <a href="/contact/">텔레그램으로 도입 상담하기</a>
+        <a class="tg-main" href="https://t.me/Guan_Yus" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+                <path d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.3 13.2 1.4 11.7c-1.1-.3-1.1-1 .2-1.5l19-7.3c.9-.3 1.7.2 1.3 1.4z"/>
+            </svg>
+            텔레그램으로 바로 문의
+        </a>
+        <a class="tg-sub-link" href="/contact/">QR·상담 준비사항 보기</a>
     </div>
+
+    <a class="tg-float" href="https://t.me/Guan_Yus" target="_blank" rel="noopener" aria-label="텔레그램으로 바로 문의하기 (새 창)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+            <path d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.3 13.2 1.4 11.7c-1.1-.3-1.1-1 .2-1.5l19-7.3c.9-.3 1.7.2 1.3 1.4z"/>
+        </svg>
+        텔레그램 문의
+    </a>
 
     <footer>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 40px 0 20px 0;">
